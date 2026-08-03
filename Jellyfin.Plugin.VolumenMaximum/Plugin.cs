@@ -32,6 +32,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         Instance = this;
         ServerConfigurationManager = configurationManager;
+        WebPath = applicationPaths.WebPath;
     }
 
     /// <inheritdoc />
@@ -53,6 +54,11 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     /// Gets the server configuration manager.
     /// </summary>
     public IServerConfigurationManager ServerConfigurationManager { get; }
+
+    /// <summary>
+    /// Gets the jellyfin-web path.
+    /// </summary>
+    public string WebPath { get; }
 
     /// <inheritdoc />
     public IEnumerable<PluginPageInfo> GetPages()

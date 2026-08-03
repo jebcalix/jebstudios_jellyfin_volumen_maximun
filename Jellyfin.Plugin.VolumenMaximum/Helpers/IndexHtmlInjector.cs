@@ -54,12 +54,12 @@ public static class IndexHtmlInjector
     public static void Direct(ILogger logger)
     {
         var plugin = Plugin.Instance;
-        if (plugin?.ApplicationPaths is null || string.IsNullOrWhiteSpace(plugin.ApplicationPaths.WebPath))
+        if (plugin is null || string.IsNullOrWhiteSpace(plugin.WebPath))
         {
             return;
         }
 
-        string indexFile = Path.Combine(plugin.ApplicationPaths.WebPath, "index.html");
+        string indexFile = Path.Combine(plugin.WebPath, "index.html");
         if (!File.Exists(indexFile))
         {
             return;
