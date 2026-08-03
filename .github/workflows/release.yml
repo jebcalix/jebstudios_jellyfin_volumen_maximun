@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Plugin version (e.g. 1.0.0.0)"
+        required: true
+        default: "1.0.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build package
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: Volumen Maximum ${{ steps.ver.outputs.version }}
+          files: |
+            dist/jebstudios_jellyfin_volumen_maximun_${{ steps.ver.outputs.version }}.zip
+            dist/jebstudios_jellyfin_volumen_maximun_${{ steps.ver.outputs.version }}.zip.md5
+          body: |
+            Plugin **Volumen Maximum** ${{ steps.ver.outputs.version }} para Jellyfin 10.11+.
+
+            Repositorio del catálogo:
+            `https://raw.githubusercontent.com/jebcalix/jebstudios_jellyfin_volumen_maximun/main/manifest.json`
+
+      - name: Commit updated manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          if git diff --staged --quiet; then
+            echo "No manifest changes"
+          else
+            git commit -m "chore: update manifest for v${{ steps.ver.outputs.version }}"
+            git push origin HEAD:main || git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

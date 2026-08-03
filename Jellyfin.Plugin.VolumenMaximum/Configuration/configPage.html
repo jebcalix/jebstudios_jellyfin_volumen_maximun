@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Volumen Maximum</title>
+</head>
+<body>
+    <div id="VolumenMaximumConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="VolumenMaximumConfigForm">
+                    <div class="sectionTitleContainer flex align-items-center">
+                        <h2 class="sectionTitle">Volumen Maximum</h2>
+                    </div>
+                    <p>Permite subir el volumen del reproductor web por encima del 100% usando Web Audio API.</p>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="Enabled" name="Enabled" type="checkbox" is="emby-checkbox" />
+                            <span>Activar boost de volumen</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Si está desactivado, el script no modificará el audio del reproductor.
+                        </div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MaxBoostPercent">Boost máximo (%)</label>
+                        <input id="MaxBoostPercent" name="MaxBoostPercent" type="number" is="emby-input" min="100" max="500" step="10" />
+                        <div class="fieldDescription">Límite superior del control en el reproductor (100–500). Valores altos pueden saturar el audio.</div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="DefaultBoostPercent">Boost por defecto (%)</label>
+                        <input id="DefaultBoostPercent" name="DefaultBoostPercent" type="number" is="emby-input" min="100" max="500" step="10" />
+                        <div class="fieldDescription">Valor inicial cuando el usuario aún no ha guardado una preferencia local.</div>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Guardar</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            var VolumenMaximumConfig = {
+                pluginUniqueId: 'e9ec64b1-0ce9-44a7-9f80-37e97c823451'
+            };
+
+            document.querySelector('#VolumenMaximumConfigPage')
+                .addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(VolumenMaximumConfig.pluginUniqueId).then(function (config) {
+                        document.querySelector('#Enabled').checked = !!config.Enabled;
+                        document.querySelector('#MaxBoostPercent').value = config.MaxBoostPercent;
+                        document.querySelector('#DefaultBoostPercent').value = config.DefaultBoostPercent;
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+            document.querySelector('#VolumenMaximumConfigForm')
+                .addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(VolumenMaximumConfig.pluginUniqueId).then(function (config) {
+                        config.Enabled = document.querySelector('#Enabled').checked;
+                        config.MaxBoostPercent = parseInt(document.querySelector('#MaxBoostPercent').value, 10) || 300;
+                        config.DefaultBoostPercent = parseInt(document.querySelector('#DefaultBoostPercent').value, 10) || 100;
+                        ApiClient.updatePluginConfiguration(VolumenMaximumConfig.pluginUniqueId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+                    return false;
+                });
+        </script>
+    </div>
+</body>
+</html>

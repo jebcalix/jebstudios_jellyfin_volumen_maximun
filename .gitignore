@@ -1,0 +1,13 @@
+# .gitignore for Jellyfin Volumen Maximum plugin
+bin/
+obj/
+dist/
+*.user
+*.suo
+.vs/
+.idea/
+*.DotSettings.user
+.DS_Store
+*.dll
+*.pdb
+!**/meta.json
