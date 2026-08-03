@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="$ROOT/Jellyfin.Plugin.VolumenMaximum"
-VERSION="${VERSION:-1.0.3.0}"
+VERSION="${VERSION:-1.0.4.0}"
 OUT_DIR="$ROOT/dist"
 PUBLISH_DIR="$PROJECT/bin/publish"
 ZIP_NAME="jebstudios_jellyfin_volumen_maximun_${VERSION}.zip"
@@ -25,7 +25,7 @@ TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 cat > "$STAGE/meta.json" <<EOF
 {
   "category": "General",
-  "changelog": "Evita corromper playback-video-index-html chunk (regex index.html demasiado amplio).",
+  "changelog": "Inyecta solo en rutas que terminan en index.html; mantiene guardas anti-chunk.",
   "description": "Permite subir el volumen del reproductor web por encima del 100% usando Web Audio API.",
   "guid": "e9ec64b1-0ce9-44a7-9f80-37e97c823451",
   "name": "Volumen Maximum",
@@ -69,7 +69,7 @@ if manifest_path.exists():
 versions = [
     {
         "version": version,
-            "changelog": "Fix: no inyectar en chunks JS (playback-video-index-html). Solo index.html real.",
+            "changelog": "Fix: patrón index.html$ para inyectar el script sin romper el reproductor ni fallar la inyección.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": source_url,
         "checksum": checksum,
