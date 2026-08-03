@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,14 +10,37 @@ namespace Jellyfin.Plugin.VolumenMaximum.Api;
 /// </summary>
 [ApiController]
 [Route("VolumenMaximum")]
-[Authorize]
 public class VolumenMaximumController : ControllerBase
 {
+    private readonly Assembly _assembly = typeof(Plugin).Assembly;
+    private readonly string _scriptResourcePath = $"{typeof(Plugin).Namespace}.Web.volumenmaximum.js";
+
+    /// <summary>
+    /// Gets the embedded client script.
+    /// </summary>
+    /// <returns>JavaScript payload.</returns>
+    [HttpGet("ClientScript")]
+    [AllowAnonymous]
+    [Produces("application/javascript")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult GetClientScript()
+    {
+        Stream? scriptStream = _assembly.GetManifestResourceStream(_scriptResourcePath);
+        if (scriptStream is null)
+        {
+            return NotFound();
+        }
+
+        return File(scriptStream, "application/javascript");
+    }
+
     /// <summary>
     /// Gets the current plugin configuration for the web client.
     /// </summary>
     /// <returns>Client-facing configuration.</returns>
     [HttpGet("Configuration")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public ActionResult<ClientConfigurationDto> GetConfiguration()

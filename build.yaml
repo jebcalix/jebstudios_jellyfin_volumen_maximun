@@ -1,7 +1,7 @@
 ---
 name: "Volumen Maximum"
 guid: "e9ec64b1-0ce9-44a7-9f80-37e97c823451"
-version: "1.0.0.0"
+version: "1.0.1.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 overview: "Boost de volumen para películas bajas de audio"
@@ -9,11 +9,10 @@ description: "Permite subir el volumen del reproductor web por encima del 100% u
 owner: "jebcalix"
 category: "General"
 changelog: |-
-  Versión inicial:
-  - Boost de volumen en el cliente web (hasta el máximo configurado)
-  - Control OSD y atajos [ ]
-  - Página de configuración en el dashboard
+  1.0.1.0:
+  - Inyección del script con File Transformation
+  - Endpoint /VolumenMaximum/ClientScript
+  1.0.0.0:
+  - Boost de volumen en el cliente web
 artifacts:
   - "${env.ARTIFACT}/Jellyfin.Plugin.VolumenMaximum.dll"
-  - "${env.ARTIFACT}/HttpResponseTransformer.dll"
-  - "${env.ARTIFACT}/HtmlAgilityPack.dll"

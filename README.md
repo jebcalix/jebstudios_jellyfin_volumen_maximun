@@ -2,7 +2,9 @@
 
 Plugin para **Jellyfin 10.11+** que permite subir el volumen del **cliente web** por encima del 100% (ideal para películas con audio muy bajo).
 
-Usa Web Audio API (`GainNode`) e inyecta el script en el HTML servido **sin modificar** `/usr/share/jellyfin/web/index.html` en disco.
+Usa Web Audio API (`GainNode`) e inyecta el script en el HTML vía el plugin **File Transformation** (recomendado; ya lo tienes en tu servidor).
+
+> Tras instalar o actualizar desde el dashboard, usa `systemctl restart jellyfin` en lugar del botón "Reiniciar" de la web: ese botón apaga el servicio y systemd no lo vuelve a levantar (`Restart=on-failure`).
 
 ## Características
 

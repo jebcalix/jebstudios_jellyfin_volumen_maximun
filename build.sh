@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="$ROOT/Jellyfin.Plugin.VolumenMaximum"
-VERSION="${VERSION:-1.0.0.0}"
+VERSION="${VERSION:-1.0.1.0}"
 OUT_DIR="$ROOT/dist"
 PUBLISH_DIR="$PROJECT/bin/publish"
 ZIP_NAME="jebstudios_jellyfin_volumen_maximun_${VERSION}.zip"
@@ -25,7 +25,7 @@ TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 cat > "$STAGE/meta.json" <<EOF
 {
   "category": "General",
-  "changelog": "Versión inicial: boost de volumen en el cliente web.",
+  "changelog": "Corrige inyección del script usando File Transformation; elimina HttpResponseTransformer.",
   "description": "Permite subir el volumen del reproductor web por encima del 100% usando Web Audio API.",
   "guid": "e9ec64b1-0ce9-44a7-9f80-37e97c823451",
   "name": "Volumen Maximum",
@@ -37,17 +37,7 @@ cat > "$STAGE/meta.json" <<EOF
 }
 EOF
 
-# Only ship plugin + third-party deps not provided by Jellyfin host
-for f in \
-  Jellyfin.Plugin.VolumenMaximum.dll \
-  HttpResponseTransformer.dll \
-  HtmlAgilityPack.dll \
-  System.Xml.XPath.XmlDocument.dll
-do
-  if [[ -f "$PUBLISH_DIR/$f" ]]; then
-    cp "$PUBLISH_DIR/$f" "$STAGE/"
-  fi
-done
+cp "$PUBLISH_DIR/Jellyfin.Plugin.VolumenMaximum.dll" "$STAGE/"
 
 (
   cd "$STAGE"
@@ -68,6 +58,30 @@ from pathlib import Path
 manifest_path = Path(sys.argv[1])
 version, source_url, checksum, timestamp = sys.argv[2:6]
 
+# Preserve older versions if present
+existing = []
+if manifest_path.exists():
+    try:
+        existing = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception:
+        existing = []
+
+versions = [
+    {
+        "version": version,
+        "changelog": "Corrige inyección del script con File Transformation (compatible con tu servidor).",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": source_url,
+        "checksum": checksum,
+        "timestamp": timestamp,
+    }
+]
+
+if existing and isinstance(existing, list) and existing:
+    for v in existing[0].get("versions", []):
+        if v.get("version") != version:
+            versions.append(v)
+
 entry = {
     "guid": "e9ec64b1-0ce9-44a7-9f80-37e97c823451",
     "name": "Volumen Maximum",
@@ -75,16 +89,7 @@ entry = {
     "overview": "Boost de volumen para películas bajas de audio",
     "owner": "jebcalix",
     "category": "General",
-    "versions": [
-        {
-            "version": version,
-            "changelog": "Versión inicial: boost de volumen en el cliente web, control OSD y atajos [ ].",
-            "targetAbi": "10.11.0.0",
-            "sourceUrl": source_url,
-            "checksum": checksum,
-            "timestamp": timestamp,
-        }
-    ],
+    "versions": versions,
 }
 
 manifest_path.write_text(json.dumps([entry], indent=2) + "\n", encoding="utf-8")
