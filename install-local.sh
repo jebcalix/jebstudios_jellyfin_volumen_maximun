@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ZIP="${1:-/home/jairo/Documentos/Proyectos/jellyfin/jebstudios_jellyfin_volumen_maximun/dist/jebstudios_jellyfin_volumen_maximun_1.0.5.0.zip}"
+ZIP="${1:-/home/jairo/Documentos/Proyectos/jellyfin/jebstudios_jellyfin_volumen_maximun/dist/jebstudios_jellyfin_volumen_maximun_1.0.6.0.zip}"
 PLUGINS="/var/lib/jellyfin/plugins"
-TARGET="$PLUGINS/Volumen Maximum_1.0.5.0"
+TARGET="$PLUGINS/Volumen Maximum_1.0.6.0"
 
 if [[ ! -f "$ZIP" ]]; then
   echo "No existe: $ZIP" >&2

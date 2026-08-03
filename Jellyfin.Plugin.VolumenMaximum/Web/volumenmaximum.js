@@ -414,17 +414,23 @@
             return;
         }
 
-        var video = findVideo();
-        if (video) {
-            ensureUi();
-            if (state.boostPercent > 100) {
-                applyGain();
-            } else if (state.boundVideo && state.boundVideo !== video) {
+        try {
+            var video = findVideo();
+            var onPlayer = !!document.querySelector('#videoOsdPage, .videoOsdBottom');
+
+            if (onPlayer && video) {
+                ensureUi();
+                if (state.boostPercent > 100) {
+                    applyGain();
+                } else if (state.boundVideo && state.boundVideo !== video) {
+                    disconnectAudioGraph();
+                }
+            } else if (state.boundVideo || document.getElementById('volumenMaximumControl')) {
                 disconnectAudioGraph();
+                removeUi();
             }
-        } else if (state.boundVideo || document.getElementById('volumenMaximumControl')) {
-            disconnectAudioGraph();
-            removeUi();
+        } catch (err) {
+            console.warn('[VolumenMaximum] tick error:', err);
         }
     }
 
@@ -470,8 +476,8 @@
             state.maxBoost = clamp(parseInt(config.MaxBoostPercent, 10) || 300, 100, 500);
             state.defaultBoost = clamp(parseInt(config.DefaultBoostPercent, 10) || 100, 100, state.maxBoost);
             state.boostPercent = loadLocalBoost(state.defaultBoost, state.maxBoost);
-        }).catch(function (err) {
-            console.warn('[VolumenMaximum] No se pudo cargar la configuración del servidor:', err);
+        }).catch(function () {
+            // 401 before login is normal; keep defaults
             state.enabled = true;
             state.maxBoost = 300;
             state.defaultBoost = 100;
@@ -480,21 +486,20 @@
     }
 
     function start() {
-        loadServerConfig().then(function () {
-            document.addEventListener('keydown', onKeyDown, true);
-            document.addEventListener('click', onDocumentClick, true);
-
-            var observer = new MutationObserver(function () {
-                if (findButtonsRow() || findVolumeButtons()) {
-                    ensureUi();
+        // Wait for Jellyfin UI shell before touching the DOM heavily
+        setTimeout(function () {
+            loadServerConfig().finally(function () {
+                try {
+                    document.addEventListener('keydown', onKeyDown, true);
+                    document.addEventListener('click', onDocumentClick, true);
+                    setInterval(tick, 1500);
+                    tick();
+                    console.info('[VolumenMaximum] listo — boost', state.boostPercent + '% (máx ' + state.maxBoost + '%)');
+                } catch (err) {
+                    console.warn('[VolumenMaximum] start error:', err);
                 }
             });
-            observer.observe(document.documentElement, { childList: true, subtree: true });
-
-            setInterval(tick, 800);
-            tick();
-            console.info('[VolumenMaximum] listo — boost', state.boostPercent + '% (máx ' + state.maxBoost + '%)');
-        });
+        }, 2500);
     }
 
     if (document.readyState === 'loading') {
