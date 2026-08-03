@@ -40,11 +40,11 @@ public class StartupService : IScheduledTask
     {
         JObject payload = new()
         {
-            // Escape the dot and require suffix "index.html".
-            // Do NOT use bare "index.html" (matches playback-video-index-html.*.chunk.js).
-            // Do NOT use ^...$ only (File Transformation may pass a path prefix).
+            // Same style as other plugins. Bare "index.html" is a regex where "." = any char,
+            // so it can also hit playback-video-index-html.*.chunk.js — FileTransformer must
+            // no-op on non-HTML (LooksLikeHtmlDocument).
             { "id", "a1b2c3d4-e5f6-7890-abcd-ef1234567890" },
-            { "fileNamePattern", "index\\.html$" },
+            { "fileNamePattern", "index.html" },
             { "callbackAssembly", GetType().Assembly.FullName },
             { "callbackClass", typeof(IndexHtmlInjector).FullName },
             { "callbackMethod", nameof(IndexHtmlInjector.FileTransformer) }

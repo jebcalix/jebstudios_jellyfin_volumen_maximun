@@ -55,17 +55,23 @@ public static class IndexHtmlInjector
 
     private static bool LooksLikeHtmlDocument(string contents)
     {
+        // Webpack / JS chunks that embed HTML templates as strings
+        if (contents.Contains("webpackChunk", StringComparison.Ordinal)
+            || contents.Contains("self.webpackChunk", StringComparison.Ordinal)
+            || contents.TrimStart().StartsWith("\"use strict\"", StringComparison.Ordinal)
+            || contents.TrimStart().StartsWith("'use strict'", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
         ReadOnlySpan<char> trimmed = contents.AsSpan().TrimStart();
         if (trimmed.StartsWith("<!doctype", StringComparison.OrdinalIgnoreCase)
             || trimmed.StartsWith("<html", StringComparison.OrdinalIgnoreCase))
         {
-            return true;
+            return contents.Contains("</body>", StringComparison.OrdinalIgnoreCase);
         }
 
-        return contents.Contains("<html", StringComparison.OrdinalIgnoreCase)
-               && contents.Contains("</body>", StringComparison.OrdinalIgnoreCase)
-               && !contents.TrimStart().StartsWith("\"use strict\"", StringComparison.Ordinal)
-               && !contents.Contains("webpackChunk", StringComparison.Ordinal);
+        return false;
     }
 
     /// <summary>

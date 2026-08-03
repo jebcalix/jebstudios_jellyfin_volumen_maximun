@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="$ROOT/Jellyfin.Plugin.VolumenMaximum"
-VERSION="${VERSION:-1.0.4.0}"
+VERSION="${VERSION:-1.0.5.0}"
 OUT_DIR="$ROOT/dist"
 PUBLISH_DIR="$PROJECT/bin/publish"
 ZIP_NAME="jebstudios_jellyfin_volumen_maximun_${VERSION}.zip"
@@ -25,7 +25,7 @@ TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 cat > "$STAGE/meta.json" <<EOF
 {
   "category": "General",
-  "changelog": "Inyecta solo en rutas que terminan en index.html; mantiene guardas anti-chunk.",
+  "changelog": "Inyecta como los demás plugins (index.html) con guardas anti-chunk para el botón Boost.",
   "description": "Permite subir el volumen del reproductor web por encima del 100% usando Web Audio API.",
   "guid": "e9ec64b1-0ce9-44a7-9f80-37e97c823451",
   "name": "Volumen Maximum",
@@ -69,7 +69,7 @@ if manifest_path.exists():
 versions = [
     {
         "version": version,
-            "changelog": "Fix: patrón index.html$ para inyectar el script sin romper el reproductor ni fallar la inyección.",
+            "changelog": "Fix: inyección fiable del botón Boost (mismo patrón index.html + protección de chunks JS).",
         "targetAbi": "10.11.0.0",
         "sourceUrl": source_url,
         "checksum": checksum,
