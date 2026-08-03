@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.0.3.0",
+        "changelog": "Fix: no inyectar en chunks JS (playback-video-index-html). Solo index.html real.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/jebcalix/jebstudios_jellyfin_volumen_maximun/releases/download/v1.0.3.0/jebstudios_jellyfin_volumen_maximun_1.0.3.0.zip",
+        "checksum": "F5CF789E1ACAEE0773681BBDB3C43FE9",
+        "timestamp": "2026-08-03T22:52:45"
+      },
+      {
         "version": "1.0.2.0",
         "changelog": "Bot\u00f3n Boost audio en la barra OSD (junto al volumen), panel r\u00e1pido 100/150/200%.",
         "targetAbi": "10.11.0.0",

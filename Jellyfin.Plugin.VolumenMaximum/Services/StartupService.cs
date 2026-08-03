@@ -40,8 +40,10 @@ public class StartupService : IScheduledTask
     {
         JObject payload = new()
         {
+            // Must be anchored: "index.html" as regex also matches
+            // playback-video-index-html.*.chunk.js and corrupts the player.
             { "id", "a1b2c3d4-e5f6-7890-abcd-ef1234567890" },
-            { "fileNamePattern", "index.html" },
+            { "fileNamePattern", "^index\\.html$" },
             { "callbackAssembly", GetType().Assembly.FullName },
             { "callbackClass", typeof(IndexHtmlInjector).FullName },
             { "callbackMethod", nameof(IndexHtmlInjector.FileTransformer) }

@@ -30,6 +30,12 @@ public static class IndexHtmlInjector
             return indexContents;
         }
 
+        // Never patch JS chunks or non-document payloads (e.g. playback-video-index-html.*.chunk.js).
+        if (!LooksLikeHtmlDocument(indexContents))
+        {
+            return indexContents;
+        }
+
         string scriptElement = GetScriptElement();
         indexContents = ExistingScriptRegex.Replace(indexContents, string.Empty);
 
@@ -41,10 +47,25 @@ public static class IndexHtmlInjector
         int bodyClosing = indexContents.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
         if (bodyClosing == -1)
         {
-            return indexContents + scriptElement;
+            return indexContents;
         }
 
         return indexContents.Insert(bodyClosing, scriptElement);
+    }
+
+    private static bool LooksLikeHtmlDocument(string contents)
+    {
+        ReadOnlySpan<char> trimmed = contents.AsSpan().TrimStart();
+        if (trimmed.StartsWith("<!doctype", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("<html", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return contents.Contains("<html", StringComparison.OrdinalIgnoreCase)
+               && contents.Contains("</body>", StringComparison.OrdinalIgnoreCase)
+               && !contents.TrimStart().StartsWith("\"use strict\"", StringComparison.Ordinal)
+               && !contents.Contains("webpackChunk", StringComparison.Ordinal);
     }
 
     /// <summary>
