@@ -17,7 +17,8 @@
         source: null,
         gainNode: null,
         boundVideo: null,
-        toastTimer: null
+        toastTimer: null,
+        panelOpen: false
     };
 
     function clamp(value, min, max) {
@@ -44,7 +45,7 @@
         try {
             localStorage.setItem(STORAGE_KEY, String(value));
         } catch (e) {
-            /* ignore quota / private mode */
+            /* ignore */
         }
     }
 
@@ -70,7 +71,7 @@
             zIndex: '100000',
             fontSize: '14px',
             pointerEvents: 'none',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.35)'
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)'
         });
         document.body.appendChild(toast);
 
@@ -188,7 +189,7 @@
         applyGain();
 
         if (announce) {
-            var msg = 'Volumen: ' + next + '%';
+            var msg = 'Boost: ' + next + '%';
             if (next >= Math.min(state.maxBoost, 200)) {
                 msg += ' (posible saturación)';
             }
@@ -197,70 +198,116 @@
     }
 
     function findVideo() {
-        return document.querySelector('video') || document.querySelector('.htmlvideoplayer video') || null;
+        return document.querySelector('.htmlvideoplayer video')
+            || document.querySelector('#videoOsdPage video')
+            || document.querySelector('video')
+            || null;
     }
 
-    function findOsdBottom() {
-        return document.querySelector('.videoOsdBottom-maincontrols')
-            || document.querySelector('.videoOsdBottom')
-            || document.querySelector('.osdControls')
+    function findButtonsRow() {
+        var osd = document.querySelector('.videoOsdBottom .buttons')
+            || document.querySelector('#videoOsdPage .buttons')
+            || document.querySelector('.videoOsdBottom-maincontrols')
             || null;
+        return osd;
+    }
+
+    function findVolumeButtons() {
+        return document.querySelector('.videoOsdBottom .volumeButtons')
+            || document.querySelector('#videoOsdPage .volumeButtons')
+            || null;
+    }
+
+    function ensureStyles() {
+        if (document.getElementById('volumenMaximumStyles')) {
+            return;
+        }
+
+        var style = document.createElement('style');
+        style.id = 'volumenMaximumStyles';
+        style.textContent = [
+            '.volumenMaximumButtons{display:flex;align-items:center;margin:0 .35em 0 0;position:relative;}',
+            '.volumenMaximumButtons .btnBoostAudio{position:relative;}',
+            '.volumenMaximumButtons .btnBoostAudio.active{color:#00a4dc;}',
+            '.volumenMaximumButtons .volumenMaximumBadge{position:absolute;right:-2px;bottom:2px;font-size:9px;line-height:1;background:rgba(0,0,0,.75);padding:1px 3px;border-radius:3px;pointer-events:none;}',
+            '.volumenMaximumPanel{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(28,28,28,.96);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;min-width:190px;z-index:100001;box-shadow:0 8px 24px rgba(0,0,0,.45);}',
+            '.volumenMaximumPanel.open{display:block;}',
+            '.volumenMaximumPanelLabel{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:8px;opacity:.95;}',
+            '.volumenMaximumPanel input[type=range]{width:100%;accent-color:#00a4dc;}',
+            '.volumenMaximumPanelActions{display:flex;gap:6px;margin-top:8px;}',
+            '.volumenMaximumPanelActions button{flex:1;background:rgba(255,255,255,.08);border:0;color:#fff;border-radius:6px;padding:6px 0;cursor:pointer;font-size:12px;}',
+            '.volumenMaximumPanelActions button:hover{background:rgba(0,164,220,.35);}',
+            '@media (max-width:43em){.volumenMaximumButtons .volumenMaximumPanel{left:auto;right:0;transform:none;}}'
+        ].join('');
+        document.head.appendChild(style);
     }
 
     function ensureUi() {
         if (!state.enabled) {
-            var existingOff = document.getElementById('volumenMaximumControl');
-            if (existingOff) {
-                existingOff.remove();
+            removeUi();
+            return;
+        }
+
+        ensureStyles();
+
+        var existing = document.getElementById('volumenMaximumControl');
+        if (existing) {
+            // Re-attach if OSD was re-rendered and our node was orphaned
+            if (!existing.isConnected) {
+                existing.remove();
+            } else {
+                updateUi();
+                return;
             }
-            return;
         }
 
-        if (document.getElementById('volumenMaximumControl')) {
-            updateUi();
-            return;
-        }
-
-        var host = findOsdBottom();
-        if (!host) {
+        var buttonsRow = findButtonsRow();
+        var volumeButtons = findVolumeButtons();
+        if (!buttonsRow && !volumeButtons) {
             return;
         }
 
         var wrap = document.createElement('div');
         wrap.id = 'volumenMaximumControl';
-        wrap.className = 'volumenMaximumControl flex flex-direction-row align-items-center';
-        Object.assign(wrap.style, {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginLeft: '10px',
-            minWidth: '160px'
+        wrap.className = 'volumenMaximumButtons volumeButtons';
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'volumenMaximumButton';
+        btn.className = 'btnBoostAudio paper-icon-button-light autoSize';
+        btn.setAttribute('is', 'paper-icon-button-light');
+        btn.title = 'Boost audio ([ / ])';
+        btn.setAttribute('aria-label', 'Boost audio');
+        btn.innerHTML = '<span class="xlargePaperIconButton material-icons graphic_eq" aria-hidden="true"></span>'
+            + '<span class="volumenMaximumBadge" id="volumenMaximumBadge">100</span>';
+
+        var panel = document.createElement('div');
+        panel.id = 'volumenMaximumPanel';
+        panel.className = 'volumenMaximumPanel';
+        panel.innerHTML = ''
+            + '<div class="volumenMaximumPanelLabel"><span>Boost audio</span><strong id="volumenMaximumValue">100%</strong></div>'
+            + '<input id="volumenMaximumSlider" type="range" min="100" step="' + STEP + '" max="' + state.maxBoost + '" value="' + state.boostPercent + '" />'
+            + '<div class="volumenMaximumPanelActions">'
+            +   '<button type="button" data-boost="100">100%</button>'
+            +   '<button type="button" data-boost="150">150%</button>'
+            +   '<button type="button" data-boost="200">200%</button>'
+            + '</div>';
+
+        wrap.appendChild(btn);
+        wrap.appendChild(panel);
+
+        btn.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            state.panelOpen = !state.panelOpen;
+            panel.classList.toggle('open', state.panelOpen);
         });
 
-        var label = document.createElement('span');
-        label.id = 'volumenMaximumLabel';
-        label.textContent = 'Boost';
-        label.style.fontSize = '12px';
-        label.style.opacity = '0.9';
-        label.style.whiteSpace = 'nowrap';
+        panel.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
 
-        var slider = document.createElement('input');
-        slider.id = 'volumenMaximumSlider';
-        slider.type = 'range';
-        slider.min = '100';
-        slider.max = String(state.maxBoost);
-        slider.step = String(STEP);
-        slider.value = String(state.boostPercent);
-        slider.title = 'Boost de volumen (] / [)';
-        slider.style.width = '100px';
-        slider.style.accentColor = '#00a4dc';
-
-        var value = document.createElement('span');
-        value.id = 'volumenMaximumValue';
-        value.textContent = state.boostPercent + '%';
-        value.style.fontSize = '12px';
-        value.style.minWidth = '42px';
-
+        var slider = panel.querySelector('#volumenMaximumSlider');
         slider.addEventListener('input', function () {
             setBoost(parseInt(slider.value, 10) || 100, false);
         });
@@ -268,30 +315,74 @@
             setBoost(parseInt(slider.value, 10) || 100, true);
         });
 
-        wrap.appendChild(label);
-        wrap.appendChild(slider);
-        wrap.appendChild(value);
+        panel.querySelectorAll('[data-boost]').forEach(function (quickBtn) {
+            quickBtn.addEventListener('click', function () {
+                var value = parseInt(quickBtn.getAttribute('data-boost'), 10) || 100;
+                setBoost(value, true);
+            });
+        });
 
-        // Prefer placing near volume controls if present
-        var volumeButton = host.querySelector('.volumeButtons') || host.querySelector('.btnVolume');
-        if (volumeButton && volumeButton.parentElement) {
-            volumeButton.parentElement.appendChild(wrap);
+        // Insert right after the native volume controls, before Settings
+        if (volumeButtons && volumeButtons.parentElement) {
+            if (volumeButtons.nextSibling) {
+                volumeButtons.parentElement.insertBefore(wrap, volumeButtons.nextSibling);
+            } else {
+                volumeButtons.parentElement.appendChild(wrap);
+            }
         } else {
-            host.appendChild(wrap);
+            var settingsBtn = buttonsRow.querySelector('.btnVideoOsdSettings');
+            if (settingsBtn) {
+                buttonsRow.insertBefore(wrap, settingsBtn);
+            } else {
+                buttonsRow.appendChild(wrap);
+            }
         }
 
         updateUi();
     }
 
+    function removeUi() {
+        var existing = document.getElementById('volumenMaximumControl');
+        if (existing) {
+            existing.remove();
+        }
+        state.panelOpen = false;
+    }
+
     function updateUi() {
         var slider = document.getElementById('volumenMaximumSlider');
         var value = document.getElementById('volumenMaximumValue');
+        var badge = document.getElementById('volumenMaximumBadge');
+        var btn = document.getElementById('volumenMaximumButton');
+        var panel = document.getElementById('volumenMaximumPanel');
+
         if (slider) {
             slider.max = String(state.maxBoost);
             slider.value = String(state.boostPercent);
         }
         if (value) {
             value.textContent = state.boostPercent + '%';
+        }
+        if (badge) {
+            badge.textContent = String(state.boostPercent);
+        }
+        if (btn) {
+            btn.classList.toggle('active', state.boostPercent > 100);
+            btn.title = 'Boost audio: ' + state.boostPercent + '% ([ / ])';
+        }
+        if (panel) {
+            panel.classList.toggle('open', state.panelOpen);
+        }
+    }
+
+    function onDocumentClick(event) {
+        var control = document.getElementById('volumenMaximumControl');
+        if (!control || !state.panelOpen) {
+            return;
+        }
+        if (!control.contains(event.target)) {
+            state.panelOpen = false;
+            updateUi();
         }
     }
 
@@ -331,12 +422,9 @@
             } else if (state.boundVideo && state.boundVideo !== video) {
                 disconnectAudioGraph();
             }
-        } else if (state.boundVideo) {
+        } else if (state.boundVideo || document.getElementById('volumenMaximumControl')) {
             disconnectAudioGraph();
-            var control = document.getElementById('volumenMaximumControl');
-            if (control) {
-                control.remove();
-            }
+            removeUi();
         }
     }
 
@@ -394,7 +482,16 @@
     function start() {
         loadServerConfig().then(function () {
             document.addEventListener('keydown', onKeyDown, true);
-            setInterval(tick, 1000);
+            document.addEventListener('click', onDocumentClick, true);
+
+            var observer = new MutationObserver(function () {
+                if (findButtonsRow() || findVolumeButtons()) {
+                    ensureUi();
+                }
+            });
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+
+            setInterval(tick, 800);
             tick();
             console.info('[VolumenMaximum] listo — boost', state.boostPercent + '% (máx ' + state.maxBoost + '%)');
         });

@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="$ROOT/Jellyfin.Plugin.VolumenMaximum"
-VERSION="${VERSION:-1.0.1.0}"
+VERSION="${VERSION:-1.0.2.0}"
 OUT_DIR="$ROOT/dist"
 PUBLISH_DIR="$PROJECT/bin/publish"
 ZIP_NAME="jebstudios_jellyfin_volumen_maximun_${VERSION}.zip"
@@ -25,7 +25,7 @@ TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 cat > "$STAGE/meta.json" <<EOF
 {
   "category": "General",
-  "changelog": "Corrige inyección del script usando File Transformation; elimina HttpResponseTransformer.",
+  "changelog": "Botón Boost audio en la barra OSD del reproductor web.",
   "description": "Permite subir el volumen del reproductor web por encima del 100% usando Web Audio API.",
   "guid": "e9ec64b1-0ce9-44a7-9f80-37e97c823451",
   "name": "Volumen Maximum",
@@ -69,7 +69,7 @@ if manifest_path.exists():
 versions = [
     {
         "version": version,
-        "changelog": "Corrige inyección del script con File Transformation (compatible con tu servidor).",
+            "changelog": "Botón Boost audio en la barra OSD (junto al volumen), panel rápido 100/150/200%.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": source_url,
         "checksum": checksum,

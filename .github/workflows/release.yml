@@ -1,15 +1,12 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: "Plugin version (e.g. 1.0.0.0)"
+        description: "Plugin version (e.g. 1.0.2.0)"
         required: true
-        default: "1.0.0.0"
+        default: "1.0.2.0"
 
 permissions:
   contents: write
