@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Runtime.Loader;
 using Jellyfin.Plugin.VolumenMaximum.Helpers;
+using Jellyfin.Plugin.VolumenMaximum.Patches;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -38,6 +39,8 @@ public class StartupService : IScheduledTask
     /// <inheritdoc />
     public Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
+        EncodingBoostPatches.Apply(_logger);
+
         JObject payload = new()
         {
             // Same style as other plugins. Bare "index.html" is a regex where "." = any char,

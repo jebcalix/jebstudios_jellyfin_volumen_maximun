@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="$ROOT/Jellyfin.Plugin.VolumenMaximum"
-VERSION="${VERSION:-1.0.6.0}"
+VERSION="${VERSION:-1.0.7.0}"
 OUT_DIR="$ROOT/dist"
 PUBLISH_DIR="$PROJECT/bin/publish"
 ZIP_NAME="jebstudios_jellyfin_volumen_maximun_${VERSION}.zip"
@@ -25,8 +25,8 @@ TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 cat > "$STAGE/meta.json" <<EOF
 {
   "category": "General",
-  "changelog": "Evita congelar la UI: quita MutationObserver agresivo del cliente.",
-  "description": "Permite subir el volumen del reproductor web por encima del 100% usando Web Audio API.",
+  "changelog": "LG TV / webOS: boost por ffmpeg en el servidor (createMediaElementSource no existe en TV).",
+  "description": "Boost de volumen en web (GainNode) y en TV via transcode de audio en el servidor.",
   "guid": "e9ec64b1-0ce9-44a7-9f80-37e97c823451",
   "name": "Volumen Maximum",
   "overview": "Boost de volumen para películas bajas de audio",
@@ -38,6 +38,16 @@ cat > "$STAGE/meta.json" <<EOF
 EOF
 
 cp "$PUBLISH_DIR/Jellyfin.Plugin.VolumenMaximum.dll" "$STAGE/"
+# Harmony runtime (required for server-side ffmpeg patches)
+if [[ -f "$PUBLISH_DIR/0Harmony.dll" ]]; then
+  cp "$PUBLISH_DIR/0Harmony.dll" "$STAGE/"
+fi
+# Copy any other Harmony-related deps if present
+for dep in MonoMod.Core.dll MonoMod.RuntimeDetour.dll MonoMod.Utils.dll MonoMod.Iced.dll Mono.Cecil.dll; do
+  if [[ -f "$PUBLISH_DIR/$dep" ]]; then
+    cp "$PUBLISH_DIR/$dep" "$STAGE/"
+  fi
+done
 
 (
   cd "$STAGE"
@@ -58,7 +68,6 @@ from pathlib import Path
 manifest_path = Path(sys.argv[1])
 version, source_url, checksum, timestamp = sys.argv[2:6]
 
-# Preserve older versions if present
 existing = []
 if manifest_path.exists():
     try:
@@ -69,7 +78,7 @@ if manifest_path.exists():
 versions = [
     {
         "version": version,
-            "changelog": "Fix: deja de observar todo el DOM (pantalla negra). Boost solo en el reproductor.",
+        "changelog": "LG TV/webOS: boost por ffmpeg en servidor (createMediaElementSource no soportado en TV).",
         "targetAbi": "10.11.0.0",
         "sourceUrl": source_url,
         "checksum": checksum,
@@ -85,7 +94,7 @@ if existing and isinstance(existing, list) and existing:
 entry = {
     "guid": "e9ec64b1-0ce9-44a7-9f80-37e97c823451",
     "name": "Volumen Maximum",
-    "description": "Permite subir el volumen del reproductor web por encima del 100% usando Web Audio API.",
+    "description": "Boost de volumen en web (GainNode) y en TV vía transcode de audio en el servidor.",
     "overview": "Boost de volumen para películas bajas de audio",
     "owner": "jebcalix",
     "category": "General",
